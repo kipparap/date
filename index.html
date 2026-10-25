@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Свидание?</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  overflow: hidden;
+}
+
+/* ===== Конверт ===== */
+.float-wrapper {
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.envelope-container {
+  cursor: pointer;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+  position: relative;
+}
+.envelope-container:hover { transform: scale(1.06); }
+.envelope-container.opened { transform: scale(0.4); opacity: 0; }
+
+.envelope {
+  width: 320px;
+  height: 200px;
+  background: linear-gradient(135deg, #f5e6c8 0%, #e8d0a9 100%);
+  position: relative;
+  border-radius: 8px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+}
+.envelope::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  border-left: 160px solid transparent;
+  border-right: 160px solid transparent;
+  border-top: 100px solid #e0c79a;
+  border-radius: 8px 8px 0 0;
+}
+.envelope::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  border-left: 160px solid #ecd9b8;
+  border-right: 160px solid #ecd9b8;
+  border-top: 100px solid transparent;
+  border-bottom: 100px solid transparent;
+  border-radius: 8px;
+}
+.seal {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px; height: 60px;
+  background: radial-gradient(circle, #e74c3c 0%, #a93226 100%);
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  display: flex; justify-content: center; align-items: center;
+  color: white; font-size: 28px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.12); }
+}
+.hint {
+  position: absolute;
+  bottom: -50px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  white-space: nowrap;
+  animation: pulseText 2s infinite;
+}
+@keyframes pulseText {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ===== Windows 7 окно ===== */
+.win7-popup, .final-form {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 390px;
+  max-width: 92vw;
+  background: linear-gradient(180deg, rgba(220,235,250,0.97) 0%, rgba(200,220,240,0.97) 100%);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(100,130,170,0.9),
+    0 10px 40px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.3s;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+.win7-popup.show, .final-form.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.title-bar {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(220,235,250,0.75) 50%, rgba(200,220,240,0.85) 100%);
+  padding: 5px 8px 5px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(150,180,210,0.6);
+  font-size: 12px;
+  color: #333;
+}
+.window-controls { display: flex; gap: 2px; }
+.window-controls span {
+  width: 24px; height: 18px;
+  display: flex; justify-content: center; align-items: center;
+  font-size: 12px;
+  border-radius: 3px;
+  cursor: default;
+}
+.window-controls .minimize,
+.window-controls .maximize { background: rgba(255,255,255,0.4); }
+.window-controls .close {
+  background: linear-gradient(180deg, #ec7b62 0%, #c9553a 100%);
+  color: white;
+}
+
+.content {
+  padding: 20px;
+  color: #222;
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+.icon-warning { font-size: 42px; flex-shrink: 0; }
+.message { font-size: 14px; line-height: 1.5; }
+.message strong {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 8px;
+  color: #0a2a4a;
+}
+
+.buttons-area {
+  padding: 12px 20px 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(220,235,250,0.55) 100%);
+}
+
+.win7-btn {
+  min-width: 92px;
+  padding: 6px 20px;
+  background: linear-gradient(180deg, #fafafa 0%, #e5e5e5 50%, #d5d5d5 51%, #ececec 100%);
+  border: 1px solid #8a8a8a;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #222;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.win7-btn:hover {
+  background: linear-gradient(180deg, #e6f3ff 0%, #cce4f7 50%, #b8daf5 51%, #d4ebfc 100%);
+  border-color: #6aa3d6;
+}
+.win7-btn.primary {
+  background: linear-gradient(180deg, #f0f8ff 0%, #d6eaf8 50%, #b8daf5 51%, #d4ebfc 100%);
+  border-color: #6aa3d6;
+  font-weight: 600;
+}
+
+/* Убегающая кнопка "Нет" */
+#noBtn.escaped {
+  position: fixed;
+  z-index: 1001;
+  margin: 0;
+}
+
+/* ===== Форма ввода ===== */
+.final-form .content { flex-direction: column; }
+.final-form input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #a0a0a0;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 14px;
+  background: white;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+  outline: none;
+  transition: all 0.2s;
+}
+.final-form input[type="text"]:focus {
+  border-color: #6aa3d6;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 0 6px rgba(106,163,214,0.6);
+}
+.final-form input.error {
+  border-color: #c0392b;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 0 6px rgba(192,57,43,0.5);
+}
+.success-message {
+  text-align: center;
+  padding: 20px;
+  color: #2a7a2a;
+  font-size: 17px;
+  font-weight: 600;
+  display: none;
+}
+.success-message.show {
+  display: block;
+  animation: fadeIn 0.5s;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<div class="float-wrapper">
+  <div class="envelope-container" id="envelopeContainer">
+    <div class="envelope"><div class="seal">❤</div></div>
+    <div class="hint">Нажми на конверт</div>
+  </div>
+</div>
+
+<div class="win7-popup" id="popup">
+  <div class="title-bar">
+    <span>Уведомление</span>
+    <div class="window-controls">
+      <span class="minimize">−</span>
+      <span class="maximize">□</span>
+      <span class="close">×</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="icon-warning">💌</div>
+    <div class="message">
+      <strong>Ты пойдёшь со мной на свидание?</strong>
+      Пожалуйста, ответь честно 😊
+    </div>
+  </div>
+  <div class="buttons-area">
+    <button class="win7-btn primary" id="yesBtn">Да</button>
+    <button class="win7-btn" id="noBtn">Нет</button>
+  </div>
+</div>
+
+<div class="final-form" id="finalForm">
+  <div class="title-bar">
+    <span>Ввод данных</span>
+    <div class="window-controls">
+      <span class="minimize">−</span>
+      <span class="maximize">□</span>
+      <span class="close">×</span>
+    </div>
+  </div>
+  <div class="content">
+    <div class="message">
+      <strong>Ура! 🎉</strong>
+      Напиши дату, время и место встречи:
+    </div>
+    <input type="text" id="dateInput" placeholder="Например: 25 октября, 18:00, кафе на Ленина">
+  </div>
+  <div class="buttons-area" id="formButtons">
+    <button class="win7-btn primary" id="submitBtn">Отправить</button>
+  </div>
+  <div class="success-message" id="successMessage">
+    Договорились! Жду с нетерпением ❤️
+  </div>
+</div>
+
+<script>
+const envelope = document.getElementById('envelopeContainer');
+const popup = document.getElementById('popup');
+const yesBtn = document.getElementById('yesBtn');
+const noBtn = document.getElementById('noBtn');
+const finalForm = document.getElementById('finalForm');
+const submitBtn = document.getElementById('submitBtn');
+const dateInput = document.getElementById('dateInput');
+const successMessage = document.getElementById('successMessage');
+const formButtons = document.getElementById('formButtons');
+
+// Клик по конверту
+envelope.addEventListener('click', () => {
+  envelope.classList.add('opened');
+  setTimeout(() => {
+    document.querySelector('.float-wrapper').style.display = 'none';
+    popup.classList.add('show');
+  }, 400);
+});
+
+// Отсоединение кнопки "Нет" от popup (иначе transform ломает fixed)
+function detachNoButton() {
+  if (noBtn.parentElement !== document.body) {
+    const rect = noBtn.getBoundingClientRect();
+    document.body.appendChild(noBtn);
+    noBtn.classList.add('escaped');
+    noBtn.style.left = rect.left + 'px';
+    noBtn.style.top = rect.top + 'px';
+    noBtn.style.width = rect.width + 'px';
+    noBtn.style.height = rect.height + 'px';
+  }
+}
+
+// Телепорт
+function teleportNoButton() {
+  detachNoButton();
+  const w = noBtn.offsetWidth || 90;
+  const h = noBtn.offsetHeight || 36;
+  const oldRect = noBtn.getBoundingClientRect();
+
+  let newX, newY, tries = 0;
+  do {
+    newX = Math.random() * (window.innerWidth - w - 20) + 10;
+    newY = Math.random() * (window.innerHeight - h - 20) + 10;
+    tries++;
+  } while (
+    tries < 25 &&
+    Math.abs(newX - oldRect.left) < 220 &&
+    Math.abs(newY - oldRect.top) < 220
+  );
+
+  noBtn.style.left = newX + 'px';
+  noBtn.style.top = newY + 'px';
+}
+
+// Убегает при наведении и при касании
+noBtn.addEventListener('mouseenter', teleportNoButton);
+noBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  teleportNoButton();
+}, { passive: false });
+
+// Да
+yesBtn.addEventListener('click', () => {
+  popup.classList.remove('show');
+  noBtn.style.display = 'none';
+  setTimeout(() => {
+    finalForm.classList.add('show');
+    setTimeout(() => dateInput.focus(), 400);
+  }, 300);
+});
+
+// Отправить дату
+submitBtn.addEventListener('click', () => {
+  if (dateInput.value.trim() === '') {
+    dateInput.classList.add('error');
+    return;
+  }
+  dateInput.classList.remove('error');
+  dateInput.style.display = 'none';
+  formButtons.style.display = 'none';
+  successMessage.classList.add('show');
+});
+dateInput.addEventListener('input', () => dateInput.classList.remove('error'));
+dateInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitBtn.click();
+});
+</script>
+
+</body>
+</html>
